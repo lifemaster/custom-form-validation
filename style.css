@@ -1,0 +1,16 @@
+/**
+ * Tooltip styles
+ * customization
+ */
+
+/* Arrow color */
+.tooltip .arrow::before {
+  border-left-color: brown;
+  border-right-color: brown;
+}
+
+/* Tooltip rectangle styles */
+.tooltip .tooltip-inner {
+  background: brown;
+  color: yellow;
+}
