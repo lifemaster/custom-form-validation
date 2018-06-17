@@ -5,76 +5,107 @@ const passwordField = $('#password');
 const confirmPasswordField = $('#confirm-password');
 const allFields = $('#first-name, #last-name, #email, #password, #confirm-password');
 
-const emailRegexp = /^.+[^\.]\@.+[^\.]$/;
-const passwordRegexp = /(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z]{6,}/;
+$.fn.setValidators = function(validators) {
+  this.validators = validators;
+  return this;
+}
+
+$.fn.validate = function() {
+  if (Array.isArray(this.validators)) {
+    this.validators.forEach(validator => validator.apply(this, validator.arguments));
+  }
+  return this;
+}
+
+firstNameField.setValidators([
+  requiredValidator,
+  function() {
+    maxLengthValidator.call(firstNameField, 10);
+  }
+]);
+
+lastNameField.setValidators([
+  requiredValidator,
+  function() {
+    maxLengthValidator.call(lastNameField, 10);
+  }
+]);
+
+emailField.setValidators([emailValidator, requiredValidator]);
+
+passwordField.setValidators([
+  passwordValidator,
+  function() {
+    theSameValidator.call(passwordField, confirmPasswordField);
+  },
+  requiredValidator
+]);
+
+confirmPasswordField.setValidators([requiredValidator]);
 
 $('#form').submit(function (e) {
   e.preventDefault();
-  formValidate();
+
+  firstNameField.validate();
+  lastNameField.validate();
+  emailField.validate();
+  passwordField.validate();
+  confirmPasswordField.validate();
 });
 
 allFields.focus(function () {
   $(this).tooltip('dispose');
 });
 
-function formValidate() {
-  // first name validator
-  if (!firstNameField.val()) {
-    setTooltipWithTitle(firstNameField, 'Это поле обязательное для заполнения');
-    firstNameField.tooltip('show');
-  } else if (firstNameField.val().length > 10) {
-    setTooltipWithTitle(firstNameField, 'Длина поля не должна превышать 10 символов');
-    firstNameField.tooltip('show');
-  }
+function requiredValidator() {
+  const title = 'Это поле обязательное для заполнения';
 
-  // last name validator
-  if (!lastNameField.val()) {
-    setTooltipWithTitle(lastNameField, 'Это поле обязательное для заполнения');
-    lastNameField.tooltip('show');
-  } else if (lastNameField.val().length > 10) {
-    setTooltipWithTitle(lastNameField, 'Длина поля не должна превышать 10 символов');
-    lastNameField.tooltip('show');
-  }
-
-  // email validator
-  if (!emailField.val()) {
-    setTooltipWithTitle(emailField, 'Это поле обязательное для заполнения');
-    emailField.tooltip('show');
-  } else if (!emailRegexp.exec(emailField.val())) {
-    setTooltipWithTitle(emailField, 'Неверный формат email');
-    emailField.tooltip('show');
-  }
-
-  // password validator
-  if (passwordField.val() && confirmPasswordField.val() && passwordField.val() !== confirmPasswordField.val()) {
-    setTooltipWithTitle(passwordField, 'Пароли не совпадают');
-    passwordField.tooltip('show');
-
-    setTooltipWithTitle(confirmPasswordField, 'Пароли не совпадают');
-    confirmPasswordField.tooltip('show');
-    return;
-  }
-
-  if (!passwordField.val()) {
-    setTooltipWithTitle(passwordField, 'Это поле обязательное для заполнения');
-    passwordField.tooltip('show');
-  } else if (!passwordRegexp.exec(passwordField.val())) {
-    setTooltipWithTitle(passwordField, 'Пароль должен иметь длину не менее 6 символов и содержать хотя бы по одному из символов A-Z a-z 0-9');
-    passwordField.tooltip('show');
-  }
-
-  if (!confirmPasswordField.val()) {
-    setTooltipWithTitle(confirmPasswordField, 'Это поле обязательное для заполнения');
-    confirmPasswordField.tooltip('show');
+  if (!this.val()) {
+    setTooltipWithTitleAndShow(this, title);
   }
 }
 
-function setTooltipWithTitle(elem, title) {
-  elem.tooltip('dispose')
+function emailValidator() {
+  const emailRegexp = /^.+[^\.]\@.+[^\.]$/;
+  const title = 'Неверный формат email';
+
+  if (!emailRegexp.exec(this.val())) {
+    setTooltipWithTitleAndShow(this, title);
+  }
+}
+
+function maxLengthValidator(maxlength) {
+  const title = 'Длина поля не должна превышать ' + maxlength + ' символов';
+
+  if (this.val().length > maxlength) {
+    setTooltipWithTitleAndShow(this, title);
+  }
+}
+
+function passwordValidator() {
+  const passwordRegexp = /(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])[0-9a-zA-Z]{6,}/;
+  const title = 'Пароль должен иметь длину не менее 6 символов и содержать хотя бы по одному из символов A-Z a-z 0-9';
+
+  if (!passwordRegexp.exec(this.val())) {
+    setTooltipWithTitleAndShow(this, title);
+  }
+}
+
+function theSameValidator(elem) {
+  const title = 'Пароли не совпадают';
+  if (this.val() && elem.val() && this.val() !== elem.val()) {
+    setTooltipWithTitleAndShow(this, title);
+    setTooltipWithTitleAndShow(elem, title);
+  }
+}
+
+function setTooltipWithTitleAndShow(elem, title) {
+  elem.tooltip('dispose');
   elem.tooltip({
     container: 'body',
     placement: 'left',
     trigger: 'manual',
     title: title
   });
+  elem.tooltip('show');
 }
